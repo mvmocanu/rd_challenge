@@ -1,0 +1,15 @@
+ipython
+asgiref==3.8.1
+Django
+django-extensions
+sqlparse==0.5.2
+gunicorn==23.0.0
+psycopg2-binary==2.9.10
+requests
+djangorestframework
+celery[redis]
+django-celery-beat
+redis
+pytest
+pytest-mock
+pytest-django

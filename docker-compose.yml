@@ -1,0 +1,79 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
+
+  redis:
+    image: "redis:alpine"
+    container_name: redis_broker
+    ports:
+      - "6379:6379"
+
+  celery_worker:
+    build: .
+    container_name: celery_worker
+    command: celery -A rd_project worker --loglevel=info
+    depends_on:
+      - redis
+    env_file:
+      - .env
+
+  celery_beat:
+    build: .
+    container_name: celery_beat
+    command: celery -A rd_project beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    depends_on:
+      - redis
+    env_file:
+      - .env
+
+  flower:
+    image: mher/flower
+    container_name: flower
+    command: celery flower
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - FLOWER_PORT=5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - celery_worker
+  # flower:
+  #   image: mher/flower
+  #   container_name: celery_flower
+  #   working_dir: /app/rd_project # Ensure the working directory is set
+  #   command:
+  #     celery -A rd_project flower --broker=redis://redis:6379/0
+  #     # ["celery", "-A", "rd_project", "flower", "--broker=redis://redis:6379/0"]
+  #   ports:
+  #     - "5555:5555"
+  #   depends_on:
+  #     - redis
+  #     - worker
+  web:
+    build: .
+    container_name: django-web
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - celery_worker
+      - celery_beat
+      - redis
+    env_file:
+      - .env
+
+volumes:
+  postgres_data:
