@@ -8,12 +8,11 @@ from .views import TaskViewSet
 app_name = "api"
 
 router = DefaultRouter()
-router.register(r"task", TaskViewSet, basename="tasks")
+router.register(r"tasks", TaskViewSet, basename="tasks")
 router.register(
-    r"task-schedule", TaskScheduleViewSet, basename="taskschedules"
+    r"task-schedules", TaskScheduleViewSet, basename="taskschedules"
 )
 
 urlpatterns = [
     path("api/", include(router.urls)),
 ]
-

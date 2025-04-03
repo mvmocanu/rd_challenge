@@ -56,4 +56,4 @@ class TaskAdmin(admin.ModelAdmin):
 
 @admin.register(TaskSchedule)
 class TaskScheduleAdmin(admin.ModelAdmin):
-    list_display = ["id", "task", "scheduled_at", "interval"]
+    list_display = ["id", "task", "scheduled_at", "interval", "updated_at"]

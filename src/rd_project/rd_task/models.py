@@ -2,11 +2,11 @@ import json
 import logging
 import uuid
 
-logger = logging.getLogger(__name__)
-
 from django.db import models
 from django_celery_beat.models import IntervalSchedule
 from django_celery_beat.models import PeriodicTask
+
+logger = logging.getLogger(__name__)
 
 
 class BaseModel(models.Model):
@@ -15,8 +15,8 @@ class BaseModel(models.Model):
         default=uuid.uuid4,
         editable=False,
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True, db_index=True)
 
     class Meta:
         abstract = True
@@ -32,6 +32,7 @@ class Task(BaseModel, models.Model):
         (FAILED, "Failed"),
     ]
 
+    # TODO: move TS FK here
     a = models.IntegerField()
     b = models.IntegerField()
     status = models.CharField(
@@ -56,12 +57,6 @@ class Task(BaseModel, models.Model):
         self.failed_message = failed_message
         self.status = self.FAILED
         commit and self.save()
-
-    def get_result(self):
-        try:
-            return self.result.all().order_by("-created_at").first()
-        except TaskResult.DoesNotExist:
-            return
 
 
 class TaskSchedule(BaseModel, models.Model):
@@ -94,7 +89,7 @@ class TaskSchedule(BaseModel, models.Model):
             enabled=True,
         )
         self.interval_schedule = schedule
-        self.periodic_task_id = periodic_task
+        self.periodic_task = periodic_task
         self.save()
         return periodic_task
 
@@ -108,15 +103,19 @@ class TaskSchedule(BaseModel, models.Model):
         self.periodic_task.save()
 
     def delete_celery_beat_task(self):
+        self.task.delete()
         self.periodic_task.delete()
         self.interval_schedule.delete()
 
 
 class TaskResult(BaseModel, models.Model):
     task = models.ForeignKey(
-        "Task", on_delete=models.CASCADE, related_name="result"
+        "Task", on_delete=models.CASCADE, related_name="results"
     )
     result = models.IntegerField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"{self.task_id} - {self.result}"
