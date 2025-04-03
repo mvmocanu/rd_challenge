@@ -76,12 +76,30 @@ An **abstract base model** that provides two standard fields:
 
 **Usage**: Inherited by all other models to ensure consistency and auditability.
 
+#### TaskSchedule
+
+Handles **scheduling of periodic tasks** using Django-Celery-Beat. It ties a `Task` to a schedule using an `IntervalSchedule` and a `PeriodicTask`.
+
+##### Fields:
+
+- `interval_schedule` - Links to the Celery Beat `IntervalSchedule` using a ForeignKey.
+- `periodic_task` - Links to the Celery Beat `PeriodicTask` usign a ForeignKey.
+- `scheduled_at` - When the task should start.
+- `interval` - Interval in seconds for the periodic task.
+
+##### Methods:
+
+- `schedule_celery_beat_task()`: Creates and associates a new periodic task with Celery Beat.
+- `update_celery_beat_task()`: Updates the existing interval and task configuration.
+- `delete_celery_beat_task()`: Cleans up associated Celery Beat records.
+
 #### Task
 
 Represents a unit of work to perform an addition operation between two integers (`a + b`). Each task tracks its execution status and is optionally tied to a Celery task.
 
 ##### Fields:
 
+- `schedule` - Links to the `TaskSchedule` (ForeignKey).
 - `a`- The first operand.
 - `b`- The second operand.
 - `status` - Tracks task status: `PENDING`, `SUCCESS`, or `FAILED`.
@@ -93,24 +111,6 @@ Represents a unit of work to perform an addition operation between two integers 
 - `set_celery_task_id(_id, commit=True)`: Sets and optionally saves the Celery task ID.
 - `mark_as_successfull(result, commit=True)`: Updates task as successful and stores result.
 - `mark_as_failed(message, commit=True)`: Updates task as failed with an error message.
-
-#### TaskSchedule
-
-Handles **scheduling of periodic tasks** using Django-Celery-Beat. It ties a `Task` to a schedule using an `IntervalSchedule` and a `PeriodicTask`.
-
-##### Fields:
-
-- `task` - Links to the `Task` to be scheduled using a ForeignKey.
-- `interval_schedule` - Links to the Celery Beat `IntervalSchedule` using a ForeignKey.
-- `periodic_task` - Links to the Celery Beat `PeriodicTask` usign a ForeignKey.
-- `scheduled_at` - When the task should start.
-- `interval` - Interval in seconds for the periodic task.
-
-##### Methods:
-
-- `schedule_celery_beat_task()`: Creates and associates a new periodic task with Celery Beat.
-- `update_celery_beat_task()`: Updates the existing interval and task configuration.
-- `delete_celery_beat_task()`: Cleans up associated Celery Beat records.
 
 #### TaskResult
 
