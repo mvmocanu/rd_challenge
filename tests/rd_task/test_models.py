@@ -37,42 +37,42 @@ class TestTaskModel:
 @pytest.mark.django_db
 class TestTaskScheduleModel:
     def test_create_task_schedule(self):
-        task = Task.objects.create(a=1, b=2)
         schedule = TaskSchedule.objects.create(
-            task=task, scheduled_at=timezone.now(), interval=10
+            scheduled_at=timezone.now(), interval=10
         )
+        task = Task.objects.create(schedule=schedule, a=1, b=2)
         assert schedule.task == task
         assert schedule.interval == 10
 
     def test_schedule_celery_beat_task(self):
-        task = Task.objects.create(a=1, b=2)
         schedule = TaskSchedule.objects.create(
-            task=task, scheduled_at=timezone.now(), interval=10
+            scheduled_at=timezone.now(), interval=10
         )
+        Task.objects.create(schedule=schedule, a=1, b=2)
         schedule.schedule_celery_beat_task()
         assert PeriodicTask.objects.count() == 1
         assert (
             PeriodicTask.objects.first().name
-            == f"task-{schedule.task_id}-scheduled"
+            == f"task-{schedule.task.id}-scheduled"
         )
         assert IntervalSchedule.objects.count() == 1
         assert IntervalSchedule.objects.first().every == 10
 
     def test_update_celery_beat_task(self):
-        task = Task.objects.create(a=1, b=2)
         schedule = TaskSchedule.objects.create(
-            task=task, scheduled_at=timezone.now(), interval=10
+            scheduled_at=timezone.now(), interval=10
         )
+        Task.objects.create(schedule=schedule, a=1, b=2)
         schedule.schedule_celery_beat_task()
         schedule.interval = 20
         schedule.update_celery_beat_task()
         assert schedule.interval_schedule.every == 20
 
     def test_delete_celery_beat_task(self):
-        task = Task.objects.create(a=1, b=2)
         schedule = TaskSchedule.objects.create(
-            task=task, scheduled_at=timezone.now(), interval=10
+            scheduled_at=timezone.now(), interval=10
         )
+        Task.objects.create(schedule=schedule, a=1, b=2)
         schedule.schedule_celery_beat_task()
         assert PeriodicTask.objects.count() == 1
         schedule.delete_celery_beat_task()

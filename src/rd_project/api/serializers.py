@@ -54,7 +54,7 @@ class TaskSerializer(serializers.HyperlinkedModelSerializer):
             self.fields["results"] = TaskResultSerializer(many=True)
 
     def get_is_scheduled(self, obj):
-        return obj.schedule.exists()
+        return obj.schedule_id is not None
 
 
 class CreateUpdateTaskScheduleSerializer(
@@ -73,16 +73,15 @@ class CreateUpdateTaskScheduleSerializer(
         ]
 
     def create(self, validated_data):
-        task = Task.objects.create(
-            a=validated_data["a"], b=validated_data["b"]
-        )
-        instance = TaskSchedule.objects.create(
-            task=task,
+        schedule = TaskSchedule.objects.create(
             scheduled_at=validated_data["scheduled_at"],
             interval=validated_data["interval"],
         )
-        instance.schedule_celery_beat_task()
-        return instance
+        Task.objects.create(
+            schedule=schedule, a=validated_data["a"], b=validated_data["b"]
+        )
+        schedule.schedule_celery_beat_task()
+        return schedule
 
     def update(self, instance, validated_data):
         instance.scheduled_at = validated_data["scheduled_at"]

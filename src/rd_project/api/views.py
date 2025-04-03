@@ -33,25 +33,9 @@ class TaskScheduleViewSet(
     serializer_class = TaskScheduleSerializer
 
     def get_serializer_class(self):
-        logger.debug("action: %s", self.action)
-        # if self.action in ["retrieve", "update", "list"]:
-        #     return TaskScheduleSerializer
-        if self.action in [
-            "create",
-        ]:
+        if self.action == "create":
             return CreateUpdateTaskScheduleSerializer
         return TaskScheduleSerializer
-
-    # def get_serializer(self, *args, **kwargs):
-    #     logger.debug("args %s", args)
-    #     logger.debug("kargs %s", kwargs)
-    #     serializer_class = self.get_serializer_class()
-    #     kwargs.setdefault("context", self.get_serializer_context())
-    #     if self.action == "update":
-    #         object = self.get_object()
-    #         kwargs["data"]["a"] = object.task.a
-    #         wargs["data"]["b"] = object.task.b
-    #     return serializer_class(*args, **kwargs)
 
     def perform_destroy(self, instance):
         instance.delete_celery_beat_task()
@@ -101,7 +85,6 @@ class TaskViewSet(
         context = super().get_serializer_context()
         if self.action == "retrieve":
             context["show_results"] = True
-        logger.debug("context %s", context)
         return context
 
     def perform_create(self, serializer):

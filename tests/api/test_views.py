@@ -16,10 +16,11 @@ class TestTaskScheduleViewSet:
 
     @pytest.fixture
     def task_schedule(self):
-        task = Task.objects.create(a=5, b=2)
-        return TaskSchedule.objects.create(
-            task=task, scheduled_at="2022-02-20T14:24:34", interval=30
+        schedule = TaskSchedule.objects.create(
+            scheduled_at="2022-02-20T14:24:34", interval=30
         )
+        Task.objects.create(a=5, b=2, schedule=schedule)
+        return schedule
 
     def test_create_task_schedule(self, api_client):
         data = {

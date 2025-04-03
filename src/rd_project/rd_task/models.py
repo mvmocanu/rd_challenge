@@ -22,6 +22,61 @@ class BaseModel(models.Model):
         abstract = True
 
 
+class TaskSchedule(BaseModel, models.Model):
+    TASK_ADD = "rd_project.rd_task.tasks.add"
+    # task = models.ForeignKey(
+    #     Task, on_delete=models.CASCADE, related_name="schedule"
+    # )
+    interval_schedule = models.ForeignKey(
+        "django_celery_beat.IntervalSchedule",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+    )
+    periodic_task = models.ForeignKey(
+        "django_celery_beat.PeriodicTask",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+    )
+    scheduled_at = models.DateTimeField()
+    interval = models.IntegerField(
+        help_text=("The interval in seconds for periodic tasks")
+    )
+
+    def schedule_celery_beat_task(self):
+        interval_schedule, _ = IntervalSchedule.objects.get_or_create(
+            every=self.interval, period=IntervalSchedule.SECONDS
+        )
+
+        periodic_task = PeriodicTask.objects.create(
+            interval=interval_schedule,
+            name=f"task-{self.task.id}-scheduled",
+            task=self.TASK_ADD,
+            args=json.dumps([str(self.task.id), self.task.a, self.task.b]),
+            start_time=self.scheduled_at,
+            enabled=True,
+        )
+        self.interval_schedule = interval_schedule
+        self.periodic_task = periodic_task
+        self.save()
+        return periodic_task
+
+    def update_celery_beat_task(self):
+        self.interval_schedule.every = self.interval
+        self.interval_schedule.save()
+        self.periodic_task.scheduled_at = self.scheduled_at
+        self.periodic_task.args = json.dumps(
+            [str(self.task.id), self.task.a, self.task.b]
+        )
+        self.periodic_task.save()
+
+    def delete_celery_beat_task(self):
+        # self.task.delete()
+        self.periodic_task.delete()
+        self.interval_schedule.delete()
+
+
 class Task(BaseModel, models.Model):
     PENDING = "PENDING"
     SUCCESS = "SUCCESS"
@@ -32,7 +87,13 @@ class Task(BaseModel, models.Model):
         (FAILED, "Failed"),
     ]
 
-    # TODO: move TS FK here
+    schedule = models.OneToOneField(
+        "rd_task.TaskSchedule",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="task",
+    )
     a = models.IntegerField()
     b = models.IntegerField()
     status = models.CharField(
@@ -57,55 +118,6 @@ class Task(BaseModel, models.Model):
         self.failed_message = failed_message
         self.status = self.FAILED
         commit and self.save()
-
-
-class TaskSchedule(BaseModel, models.Model):
-    TASK_ADD = "rd_project.rd_task.tasks.add"
-    task = models.ForeignKey(
-        Task, on_delete=models.CASCADE, related_name="schedule"
-    )
-    interval_schedule = models.ForeignKey(
-        IntervalSchedule, null=True, blank=True, on_delete=models.CASCADE
-    )
-    periodic_task = models.ForeignKey(
-        PeriodicTask, null=True, blank=True, on_delete=models.CASCADE
-    )
-    scheduled_at = models.DateTimeField()
-    interval = models.IntegerField(
-        help_text=("The interval in seconds for periodic tasks")
-    )
-
-    def schedule_celery_beat_task(self):
-        schedule, _ = IntervalSchedule.objects.get_or_create(
-            every=self.interval, period=IntervalSchedule.SECONDS
-        )
-
-        periodic_task = PeriodicTask.objects.create(
-            interval=schedule,
-            name=f"task-{self.task_id}-scheduled",
-            task=self.TASK_ADD,
-            args=json.dumps([str(self.task_id), self.task.a, self.task.b]),
-            start_time=self.scheduled_at,
-            enabled=True,
-        )
-        self.interval_schedule = schedule
-        self.periodic_task = periodic_task
-        self.save()
-        return periodic_task
-
-    def update_celery_beat_task(self):
-        self.interval_schedule.every = self.interval
-        self.interval_schedule.save()
-        self.periodic_task.scheduled_at = self.scheduled_at
-        self.periodic_task.args = json.dumps(
-            [str(self.task_id), self.task.a, self.task.b]
-        )
-        self.periodic_task.save()
-
-    def delete_celery_beat_task(self):
-        self.task.delete()
-        self.periodic_task.delete()
-        self.interval_schedule.delete()
 
 
 class TaskResult(BaseModel, models.Model):
