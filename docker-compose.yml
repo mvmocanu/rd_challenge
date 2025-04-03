@@ -48,18 +48,6 @@ services:
     depends_on:
       - redis
       - celery_worker
-  # flower:
-  #   image: mher/flower
-  #   container_name: celery_flower
-  #   working_dir: /app/rd_project # Ensure the working directory is set
-  #   command:
-  #     celery -A rd_project flower --broker=redis://redis:6379/0
-  #     # ["celery", "-A", "rd_project", "flower", "--broker=redis://redis:6379/0"]
-  #   ports:
-  #     - "5555:5555"
-  #   depends_on:
-  #     - redis
-  #     - worker
   web:
     build: .
     container_name: django-web

@@ -59,7 +59,7 @@ RUN pip install -e .
 EXPOSE 8000 
 
 # collectstatic
-RUN cd src && python manage.py collectstatic --noinput || true
+RUN python manage.py collectstatic --noinput || true
  
 # Start the application using Gunicorn
 CMD ["gunicorn", "--chdir", "src", "--bind", "0.0.0.0:8000", "--workers", "1", "rd_project.wsgi:application", "--reload"]
