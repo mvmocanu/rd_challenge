@@ -25,7 +25,7 @@ node_modules
 .DS_Store
 
 # local docker-compose settings
-.env
+#.env
 
 # deployment settings
 .env-production
