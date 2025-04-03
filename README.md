@@ -50,7 +50,7 @@ docker compose run django-web pytest
 
 ## Architecture
 
-## 🔍 1. Overview
+### Overview
 
 This Django-based project is structured around a clean separation of concerns using the Django REST Framework (DRF) for API communication and Celery for background task processing. The system is modular, scalable, and built to handle asynchronous operations efficiently.
 
@@ -62,13 +62,11 @@ This Django-based project is structured around a clean separation of concerns us
 - **URLs** map API endpoints to logic handlers.
 - **Tasks** define background jobs for asynchronous processing.
 
-#### Models documentation
+### Models documentation
 
 This module defines the core data models used in the application for managing and scheduling arithmetic tasks. It supports one-off and periodic task execution using Celery and Django-Celery-Beat.
 
----
-
-## 🔹 BaseModel
+#### BaseModel
 
 An **abstract base model** that provides two standard fields:
 
@@ -78,13 +76,11 @@ An **abstract base model** that provides two standard fields:
 
 **Usage**: Inherited by all other models to ensure consistency and auditability.
 
----
-
-## 🧮 Task
+#### Task
 
 Represents a unit of work to perform an addition operation between two integers (`a + b`). Each task tracks its execution status and is optionally tied to a Celery task.
 
-### Fields:
+##### Fields:
 
 - `a`- The first operand.
 - `b`- The second operand.
@@ -92,19 +88,17 @@ Represents a unit of work to perform an addition operation between two integers 
 - `failed_message` - Stores error messages when tasks fail.
 - `celery_task_id` - Stores the ID of the associated Celery task.
 
-### Methods:
+##### Methods:
 
 - `set_celery_task_id(_id, commit=True)`: Sets and optionally saves the Celery task ID.
 - `mark_as_successfull(result, commit=True)`: Updates task as successful and stores result.
 - `mark_as_failed(message, commit=True)`: Updates task as failed with an error message.
 
----
-
-## ⏰ TaskSchedule
+#### TaskSchedule
 
 Handles **scheduling of periodic tasks** using Django-Celery-Beat. It ties a `Task` to a schedule using an `IntervalSchedule` and a `PeriodicTask`.
 
-### Fields:
+##### Fields:
 
 - `task` - Links to the `Task` to be scheduled using a ForeignKey.
 - `interval_schedule` - Links to the Celery Beat `IntervalSchedule` using a ForeignKey.
@@ -112,21 +106,17 @@ Handles **scheduling of periodic tasks** using Django-Celery-Beat. It ties a `Ta
 - `scheduled_at` - When the task should start.
 - `interval` - Interval in seconds for the periodic task.
 
-### Methods:
+##### Methods:
 
 - `schedule_celery_beat_task()`: Creates and associates a new periodic task with Celery Beat.
 - `update_celery_beat_task()`: Updates the existing interval and task configuration.
 - `delete_celery_beat_task()`: Cleans up associated Celery Beat records.
 
----
-
-## ✅ TaskResult
+#### TaskResult
 
 Stores the **result of a completed task**. Each task can have multiple results, ordered from newest to oldest.
 
-### Fields:
+##### Fields:
 
 - `task` - The `Task` to which this result belongs (ForeignKey).
 - `result` - The numeric result of `a + b`.
-
----
