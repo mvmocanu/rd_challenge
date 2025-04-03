@@ -120,3 +120,43 @@ Stores the **result of a completed task**. Each task can have multiple results, 
 
 - `task` - The `Task` to which this result belongs (ForeignKey).
 - `result` - The numeric result of `a + b`.
+
+### Views documentation
+
+This module defines REST API endpoints for managing tasks and their schedules. It leverages Django REST Framework’s `GenericViewSet` with mixins for CRUD operations, and integrates with Celery for background task execution.
+
+#### TaskScheduleViewSet
+
+##### Purpose:
+
+Manages scheduled tasks, allowing clients to create, update, retrieve, list, and delete scheduled tasks. Scheduling integrates with **Django-Celery-Beat** to periodically trigger arithmetic tasks.
+
+##### Supported Actions:
+
+| HTTP Verb | Endpoint                | Action   | Description                         |
+| --------- | ----------------------- | -------- | ----------------------------------- |
+| GET       | `/task-schedules/`      | list     | List all scheduled tasks            |
+| POST      | `/task-schedules/`      | create   | Create a new scheduled task         |
+| GET       | `/task-schedules/{id}/` | retrieve | Get details of a specific schedule  |
+| PUT       | `/task-schedules/{id}/` | update   | Update an existing schedule         |
+| DELETE    | `/task-schedules/{id}/` | destroy  | Delete a schedule and its beat task |
+
+#### TaskViewSet
+
+##### Purpose:
+
+Handles creation and retrieval of basic arithmetic tasks (`a + b`). Upon creation, the task is asynchronously processed using Celery.
+
+##### Supported Actions:
+
+| HTTP Verb | Endpoint       | Action   | Description                              |
+| --------- | -------------- | -------- | ---------------------------------------- |
+| GET       | `/tasks/`      | list     | List all tasks                           |
+| POST      | `/tasks/`      | create   | Create a new task and trigger Celery job |
+| GET       | `/tasks/{id}/` | retrieve | Retrieve a task and their result         |
+
+#### Notes
+
+- `TaskViewSet` triggers a Celery task immediately on creation, performing the `a + b` addition in the background.
+- `TaskScheduleViewSet` integrates with Celery Beat to run the addition task on a schedule (e.g., every X seconds).
+- Both ViewSets support flexible serializer behavior, clean separation of creation/update serializers, and proper cleanup of related scheduled jobs.
